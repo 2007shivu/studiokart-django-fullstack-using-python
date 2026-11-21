@@ -1,0 +1,87 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block content %}
+{% if not query %}
+<section class="hero">
+  <div class="hero-eyebrow">Studio Customizer Edition</div>
+  <h1>Pick your finish.<br>Choose RAM &amp; storage.<br>Make it yours.</h1>
+  <p>Explore 3D rotating previews, hover zoom galleries, RAM &amp; storage customization, and reviews in a pure white Apple-inspired store.</p>
+  <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+    <a href="#brands" class="btn btn-primary">Explore Brands</a>
+    <a href="{% url 'compare' %}" class="btn btn-secondary">Compare Models</a>
+  </div>
+
+  <a href="#brands" class="hero-3d-stage">
+    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=85" alt="Flagship Showcase" />
+  </a>
+</section>
+
+<section class="container" id="brands" style="padding-bottom: 16px;">
+  <div class="section-header">
+    <div>
+      <h2>Shop by Brand</h2>
+      <p>Select a brand below to open its dedicated store and configure products.</p>
+    </div>
+  </div>
+  <div class="grid-3">
+    {% for b in brands %}
+      <a href="{% url 'brand_page' b.name %}" class="card-3d">
+        <div class="card-3d-img-wrap">
+          <img src="{{ b.image }}" alt="{{ b.title }}" />
+        </div>
+        <div class="card-tag">{{ b.tagline }}</div>
+        <div class="card-title">{{ b.title }}</div>
+        <div class="card-desc">{{ b.desc }}</div>
+        <div class="card-footer">
+          <span style="color:#0071e3; font-weight:600;">Open {{ b.name }} Store →</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="container" id="featured">
+  <div class="section-header">
+    <div>
+      <h2>{% if query %}Search Results for "{{ query }}"{% else %}Customize &amp; Order Flagships{% endif %}</h2>
+      <p>Click any device for 3D rotating preview, hover zoom gallery, RAM &amp; storage customization, and reviews.</p>
+    </div>
+    {% if query %}
+      <a href="{% url 'index' %}" class="btn btn-secondary">Clear Search</a>
+    {% endif %}
+  </div>
+  <div class="grid-3">
+    {% for p in products %}
+      <a href="{% url 'product_detail' p.id %}" class="card-3d">
+        <div class="card-3d-img-wrap">
+          <img src="{{ p.image_url }}" alt="{{ p.name }}" />
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span class="card-tag" style="margin:0;">{{ p.brand }} • {{ p.category }}</span>
+          {% if p.discount_percent > 0 %}
+            <span class="discount-badge">{{ p.discount_percent }}% OFF</span>
+          {% endif %}
+        </div>
+        <div class="card-title">{{ p.name }}</div>
+        <div class="card-desc">{{ p.description }}</div>
+        <div class="card-footer">
+          <div>
+            <span class="price">₹{{ p.price|floatformat:0|intcomma }}</span>
+            {% if p.discount_percent > 0 %}
+              <span style="font-size:0.84rem; color:#6e6e73; text-decoration:line-through; margin-left:6px;">₹{{ p.effective_mrp|floatformat:0|intcomma }}</span>
+            {% endif %}
+          </div>
+          <span class="btn btn-primary" style="padding:8px 18px; font-size:0.84rem;">Customize</span>
+        </div>
+      </a>
+    {% empty %}
+      <div class="table-box" style="grid-column:1/-1; text-align:center; padding:50px;">
+        <h3>No matching products found.</h3>
+        <a href="{% url 'index' %}" class="btn btn-primary" style="margin-top:14px;">View All Products</a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

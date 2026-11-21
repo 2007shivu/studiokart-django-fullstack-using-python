@@ -1,0 +1,70 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Shopping Bag — StudioKart{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="section-header">
+    <div>
+      <h2>Your Shopping Bag</h2>
+      <p>Review your custom-configured devices before checkout.</p>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr>
+            <th>Customized Product</th>
+            <th>Unit Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td style="display:flex; align-items:center; gap:14px;">
+                <img src="{{ item.product.image_url }}" style="width:66px; height:66px; object-fit:cover; border-radius:14px;" />
+                <div>
+                  <strong>{{ item.product.name }}</strong><br>
+                  <span style="font-size:0.84rem; color:#0071e3; font-weight:600;">
+                    {{ item.selected_color }} • {{ item.selected_ram }} • {{ item.selected_storage }}
+                  </span>
+                  {% if item.engraving_text %}
+                    <div style="font-size:0.8rem; color:#6e6e73;">Engraving: "{{ item.engraving_text }}"</div>
+                  {% endif %}
+                </div>
+              </td>
+              <td>₹{{ item.unit_price|floatformat:0|intcomma }}</td>
+              <td>
+                <a href="{% url 'update_cart' item.id 'dec' %}" class="btn btn-secondary" style="padding:4px 12px;">-</a>
+                <span style="margin:0 10px; font-weight:600;">{{ item.quantity }}</span>
+                <a href="{% url 'update_cart' item.id 'inc' %}" class="btn btn-secondary" style="padding:4px 12px;">+</a>
+              </td>
+              <td><strong>₹{{ item.subtotal|floatformat:0|intcomma }}</strong></td>
+              <td>
+                <a href="{% url 'update_cart' item.id 'remove' %}" class="btn btn-danger" style="padding:6px 14px; font-size:0.82rem;">Remove</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:26px; flex-wrap:wrap; gap:16px;">
+        <div style="font-size:1.35rem; font-weight:700;">Total: ₹{{ total|floatformat:0|intcomma }}</div>
+        <a href="{% url 'checkout' %}" class="btn btn-primary">Proceed to Checkout →</a>
+      </div>
+    </div>
+  {% else %}
+    <div class="table-box" style="text-align:center; padding:60px 20px;">
+      <h3 style="margin-bottom:10px;">Your bag is empty.</h3>
+      <p style="color:#6e6e73; margin-bottom:24px;">Customize any flagship device and add it to your bag.</p>
+      <a href="{% url 'index' %}" class="btn btn-primary">Continue Shopping</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

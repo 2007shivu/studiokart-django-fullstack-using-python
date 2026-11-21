@@ -1,0 +1,82 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}My Orders — StudioKart{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="section-header">
+    <div>
+      <h2>Your Orders</h2>
+      <p>Track custom orders or cancel within 24 hours of placement.</p>
+    </div>
+  </div>
+
+  {% if orders %}
+    {% for order in orders %}
+      <div class="table-box" style="margin-bottom:22px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+          <div>
+            <span class="card-tag">Order ID: {{ order.order_number }}</span>
+            <div style="font-size:0.88rem; color:#6e6e73;">Placed on {{ order.created_at|date:"d M Y, h:i A" }}</div>
+          </div>
+          <div>
+            {% if order.status == 'Cancelled' %}
+              <span style="padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:600; background:#ffe5e5; color:#d70015;">Cancelled</span>
+            {% else %}
+              <span style="padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:600; background:#e5f5ec; color:#007a3d;">Confirmed</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          {% for item in order.items.all %}
+            <div style="margin-bottom:6px;">
+              • <b>{{ item.product_name }}</b> × {{ item.quantity }} — ₹{{ item.subtotal|floatformat:0|intcomma }}
+              {% if item.configuration %}
+                <span style="font-size:0.84rem; color:#0071e3; margin-left:6px;">({{ item.configuration }})</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div style="font-size:0.9rem; color:#6e6e73; margin-bottom:16px;">
+          <b>Deliver to:</b> {{ order.customer_name }} ({{ order.mobile }}) — {{ order.address }}
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #e8e8ed; padding-top:14px;">
+          <div>
+            <div style="font-size:1.15rem; font-weight:700;">Total Payable: ₹{{ order.total_amount|floatformat:0|intcomma }}</div>
+            <div style="font-size:0.83rem; color:#6e6e73; margin-top:2px;">
+              Payment: <strong>{{ order.payment_method }}</strong>
+              {% if order.card_discount > 0 %}
+                <span style="color:#007a3d; font-weight:600;"> • Saved ₹{{ order.card_discount|floatformat:0|intcomma }} via Card Offer</span>
+              {% endif %}
+            </div>
+            {% if order.emi_plan %}
+              <div style="font-size:0.84rem; color:#0071e3; font-weight:600; margin-top:2px;">💳 {{ order.emi_plan }}</div>
+            {% endif %}
+          </div>
+          <div>
+            {% if order.can_cancel %}
+              <a href="{% url 'cancel_order' order.id %}" class="btn btn-danger" style="padding:8px 18px; font-size:0.85rem;">
+                Cancel Order ({{ order.hours_left_to_cancel }}h left)
+              </a>
+            {% else %}
+              <span style="font-size:0.84rem; color:#6e6e73;">
+                {% if order.status == 'Cancelled' %}Order Cancelled{% else %}24-hour cancellation window closed{% endif %}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="table-box" style="text-align:center; padding:50px;">
+      <h3>No orders placed yet.</h3>
+      <p style="color:#6e6e73; margin:8px 0 20px;">Customize your first device in StudioKart.</p>
+      <a href="{% url 'index' %}" class="btn btn-primary">Explore Store</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

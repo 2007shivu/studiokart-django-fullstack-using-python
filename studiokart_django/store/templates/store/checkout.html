@@ -1,0 +1,266 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Proceed to Checkout — StudioKart{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pay-mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .pay-mode-card {
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+  .pay-mode-card.active {
+    border-color: var(--accent);
+    background: #f5f9ff;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.14);
+  }
+  .emi-tenure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .tenure-pill {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+  .tenure-pill.active {
+    border-color: var(--accent);
+    background: #f5f9ff;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.14);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="max-width:580px;" id="checkout-root" data-base-total="{{ total|floatformat:0 }}">
+    <div class="card-tag">Express Delivery &amp; Easy EMI Checkout</div>
+    <h2 style="margin-bottom:8px; letter-spacing:-0.02em;">Complete your order.</h2>
+    <p style="color:#6e6e73; font-size:0.92rem; margin-bottom:20px;">Choose card instant discount or pay in easy monthly EMIs.</p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="payment_mode" id="input-pay-mode" value="full" />
+      <input type="hidden" name="emi_tenure" id="input-emi-tenure" value="6" />
+
+      <!-- Step 1: Payment Mode (Full Payment vs Monthly EMI) -->
+      <div class="form-group">
+        <label>Payment Option</label>
+        <div class="pay-mode-tabs">
+          <div class="pay-mode-card active" data-mode="full">
+            <div style="font-weight:700; font-size:0.94rem;">Pay in Full</div>
+            <div style="font-size:0.78rem; color:#6e6e73; margin-top:2px;">Card Instant Discount / UPI</div>
+          </div>
+          <div class="pay-mode-card" data-mode="emi">
+            <div style="font-weight:700; font-size:0.94rem;">Monthly EMI</div>
+            <div style="font-size:0.78rem; color:#007a3d; font-weight:600; margin-top:2px;">No-Cost EMI Available</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Flipkart-Style Bank Card Instant Discount Offer -->
+      <div class="form-group">
+        <label>Select Bank Card Offer (Instant Discount)</label>
+        <select name="selected_bank" id="bank-select">
+          <option value="none">No Card Offer (UPI / Cash on Delivery)</option>
+          <option value="hdfc">HDFC Bank Card — 10% Instant Off (up to ₹5,000)</option>
+          <option value="icici">ICICI Bank Credit Card — Flat ₹4,000 Instant Off</option>
+          <option value="sbi">SBI Credit Card — Flat ₹3,500 Instant Off</option>
+          <option value="axis">Flipkart Axis Bank Card — 5% Instant Cashback</option>
+        </select>
+      </div>
+
+      <!-- Step 3: Monthly EMI Tenure Selector (shown when Monthly EMI is selected) -->
+      <div class="form-group" id="emi-box" style="display:none; background:#fff; padding:14px; border-radius:16px; border:1px solid #d2d2d7;">
+        <label style="margin-bottom:4px;">Choose Monthly EMI Plan</label>
+        <div class="emi-tenure-grid">
+          <div class="tenure-pill" data-months="3">
+            <div style="font-weight:700; font-size:0.92rem;" id="emi-3m">₹0/mo</div>
+            <div style="font-size:0.75rem; color:#007a3d; font-weight:600;">3 Mos • No-Cost</div>
+          </div>
+          <div class="tenure-pill active" data-months="6">
+            <div style="font-weight:700; font-size:0.92rem;" id="emi-6m">₹0/mo</div>
+            <div style="font-size:0.75rem; color:#007a3d; font-weight:600;">6 Mos • No-Cost</div>
+          </div>
+          <div class="tenure-pill" data-months="9">
+            <div style="font-weight:700; font-size:0.92rem;" id="emi-9m">₹0/mo</div>
+            <div style="font-size:0.75rem; color:#6e6e73;">9 Mos • 14% p.a.</div>
+          </div>
+          <div class="tenure-pill" data-months="12">
+            <div style="font-weight:700; font-size:0.92rem;" id="emi-12m">₹0/mo</div>
+            <div style="font-size:0.75rem; color:#6e6e73;">12 Mos • 14% p.a.</div>
+          </div>
+          <div class="tenure-pill" data-months="24">
+            <div style="font-weight:700; font-size:0.92rem;" id="emi-24m">₹0/mo</div>
+            <div style="font-size:0.75rem; color:#6e6e73;">24 Mos • 14% p.a.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Price & Discount Breakdown -->
+      <div style="background:#fff; padding:16px; border-radius:16px; margin-bottom:20px; border:1px solid #d2d2d7;">
+        <div style="font-size:0.84rem; color:#6e6e73; margin-bottom:8px;">Price &amp; Offer Summary</div>
+        {% if buy_now_product and custom_buy %}
+          <div style="font-size:0.94rem; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between;">
+              <strong>{{ buy_now_product.name }} × 1</strong>
+              <b>₹{{ total|floatformat:0|intcomma }}</b>
+            </div>
+            <div style="font-size:0.82rem; color:#0071e3; margin-top:2px;">
+              {{ custom_buy.color }} • {{ custom_buy.ram }} • {{ custom_buy.storage }}
+              {% if custom_buy.engraving %} • Engraving: "{{ custom_buy.engraving }}"{% endif %}
+            </div>
+          </div>
+        {% else %}
+          {% for item in cart_items %}
+            <div style="margin-bottom:8px; font-size:0.92rem;">
+              <div style="display:flex; justify-content:space-between;">
+                <span>{{ item.product.name }} × {{ item.quantity }}</span>
+                <b>₹{{ item.subtotal|floatformat:0|intcomma }}</b>
+              </div>
+              <div style="font-size:0.8rem; color:#0071e3;">
+                {{ item.selected_color }} • {{ item.selected_ram }} • {{ item.selected_storage }}
+                {% if item.engraving_text %} • Engraving: "{{ item.engraving_text }}"{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+        <hr style="border:none; border-top:1px solid #e8e8ed; margin:10px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:0.92rem; margin-bottom:4px;">
+          <span>Item Subtotal</span>
+          <span>₹{{ total|floatformat:0|intcomma }}</span>
+        </div>
+        <div id="discount-row" style="display:none; justify-content:space-between; font-size:0.92rem; color:#007a3d; font-weight:600; margin-bottom:6px;">
+          <span>Bank Card Instant Discount</span>
+          <span id="discount-val">- ₹0</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:1.12rem; margin-top:6px;">
+          <strong>Total Payable</strong>
+          <strong id="final-payable-val">₹{{ total|floatformat:0|intcomma }}</strong>
+        </div>
+        <div id="emi-summary-line" style="display:none; margin-top:8px; padding:8px 12px; border-radius:10px; background:#e5f5ec; color:#007a3d; font-size:0.85rem; font-weight:700;"></div>
+      </div>
+
+      <!-- Delivery Details (Customer Name auto-filled) -->
+      <div class="form-group">
+        <label>Customer Name (Auto-filled from Account)</label>
+        <input type="text" value="{{ auto_name }}" readonly style="background:#e8e8ed; font-weight:600;" />
+      </div>
+      <div class="form-group">
+        <label>Mobile Number</label>
+        <input type="tel" name="mobile" placeholder="+91 98765 43210" required />
+      </div>
+      <div class="form-group">
+        <label>Full Delivery Address</label>
+        <textarea name="address" rows="3" placeholder="House/Flat No, Street, City, State, PIN Code" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:6px;">Place Order Now</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const root = document.getElementById("checkout-root");
+    const baseTotal = Number(root.dataset.baseTotal) || 0;
+    const bankSelect = document.getElementById("bank-select");
+    const emiBox = document.getElementById("emi-box");
+    const modeInput = document.getElementById("input-pay-mode");
+    const tenureInput = document.getElementById("input-emi-tenure");
+
+    let payMode = "full";
+    let selectedTenure = 6;
+
+    function calcDiscount(bank) {
+      if (bank === "hdfc") return Math.min(5000, Math.round(baseTotal * 0.10));
+      if (bank === "icici") return Math.min(4000, baseTotal);
+      if (bank === "sbi") return Math.min(3500, baseTotal);
+      if (bank === "axis") return Math.round(baseTotal * 0.05);
+      return 0;
+    }
+
+    function calcMonthlyEmi(principal, months) {
+      if (months === 3 || months === 6) {
+        return Math.round(principal / months);
+      }
+      const r = 0.14 / 12;
+      const factor = Math.pow(1 + r, months);
+      return Math.round((principal * r * factor) / (factor - 1));
+    }
+
+    function updateCheckoutNumbers() {
+      const disc = calcDiscount(bankSelect.value);
+      const finalAmt = Math.max(0, baseTotal - disc);
+
+      const discRow = document.getElementById("discount-row");
+      if (disc > 0) {
+        discRow.style.display = "flex";
+        document.getElementById("discount-val").textContent = "- ₹" + disc.toLocaleString("en-IN");
+      } else {
+        discRow.style.display = "none";
+      }
+
+      document.getElementById("final-payable-val").textContent = "₹" + finalAmt.toLocaleString("en-IN");
+
+      // Update all 5 tenure cards live
+      [3, 6, 9, 12, 24].forEach((m) => {
+        const el = document.getElementById("emi-" + m + "m");
+        if (el) el.textContent = "₹" + calcMonthlyEmi(finalAmt, m).toLocaleString("en-IN") + "/mo";
+      });
+
+      const emiLine = document.getElementById("emi-summary-line");
+      if (payMode === "emi") {
+        const monthly = calcMonthlyEmi(finalAmt, selectedTenure);
+        const tag = (selectedTenure === 3 || selectedTenure === 6) ? "No-Cost EMI" : "14% p.a. Standard EMI";
+        emiLine.style.display = "block";
+        emiLine.textContent = "Selected Plan: " + selectedTenure + " Months @ ₹" + monthly.toLocaleString("en-IN") + "/month (" + tag + ")";
+      } else {
+        emiLine.style.display = "none";
+      }
+    }
+
+    document.querySelectorAll(".pay-mode-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        payMode = card.dataset.mode;
+        modeInput.value = payMode;
+        document.querySelectorAll(".pay-mode-card").forEach((c) => c.classList.remove("active"));
+        card.classList.add("active");
+        emiBox.style.display = payMode === "emi" ? "block" : "none";
+        updateCheckoutNumbers();
+      });
+    });
+
+    document.querySelectorAll(".tenure-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        selectedTenure = Number(pill.dataset.months);
+        tenureInput.value = selectedTenure;
+        document.querySelectorAll(".tenure-pill").forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+        updateCheckoutNumbers();
+      });
+    });
+
+    bankSelect.addEventListener("change", updateCheckoutNumbers);
+    updateCheckoutNumbers();
+  });
+</script>
+{% endblock %}

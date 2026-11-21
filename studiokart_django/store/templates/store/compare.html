@@ -1,0 +1,97 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Compare Flagships — StudioKart{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="section-header">
+    <div>
+      <div class="card-tag">Apple-Style Model Comparison</div>
+      <h2>Compare Devices Side by Side</h2>
+      <p>Pick any two models to compare pricing, discounts, RAM, storage, finishes, and specs.</p>
+    </div>
+  </div>
+
+  <form method="GET" class="table-box" style="margin-bottom:28px; display:flex; gap:16px; flex-wrap:wrap; align-items:end;">
+    <div class="form-group" style="flex:1; min-width:220px; margin-bottom:0;">
+      <label>First Device</label>
+      <select name="p1" onchange="this.form.submit()">
+        {% for item in all_products %}
+          <option value="{{ item.id }}" {% if p1 and item.id == p1.id %}selected{% endif %}>{{ item.brand }} — {{ item.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="flex:1; min-width:220px; margin-bottom:0;">
+      <label>Second Device</label>
+      <select name="p2" onchange="this.form.submit()">
+        {% for item in all_products %}
+          <option value="{{ item.id }}" {% if p2 and item.id == p2.id %}selected{% endif %}>{{ item.brand }} — {{ item.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  {% if p1 and p2 %}
+  <div class="table-box">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%;">Feature</th>
+          <th style="width:40%;">{{ p1.name }}</th>
+          <th style="width:40%;">{{ p2.name }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Preview</strong></td>
+          <td><img src="{{ p1.image_url }}" style="width:180px; height:140px; object-fit:cover; border-radius:16px;" /></td>
+          <td><img src="{{ p2.image_url }}" style="width:180px; height:140px; object-fit:cover; border-radius:16px;" /></td>
+        </tr>
+        <tr>
+          <td><strong>Brand &amp; Rating</strong></td>
+          <td>{{ p1.brand }} • ★ {{ p1.average_rating }}</td>
+          <td>{{ p2.brand }} • ★ {{ p2.average_rating }}</td>
+        </tr>
+        <tr>
+          <td><strong>Price &amp; Discount</strong></td>
+          <td>
+            <strong style="font-size:1.2rem;">₹{{ p1.price|floatformat:0|intcomma }}</strong>
+            {% if p1.discount_percent > 0 %}<span class="discount-badge" style="margin-left:6px;">{{ p1.discount_percent }}% OFF</span>{% endif %}
+          </td>
+          <td>
+            <strong style="font-size:1.2rem;">₹{{ p2.price|floatformat:0|intcomma }}</strong>
+            {% if p2.discount_percent > 0 %}<span class="discount-badge" style="margin-left:6px;">{{ p2.discount_percent }}% OFF</span>{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Availability</strong></td>
+          <td>{% if p1.stock_count > 0 %}<span class="stock-pill stock-in">In Stock ({{ p1.stock_count }})</span>{% else %}<span class="stock-pill stock-out">Out of Stock</span>{% endif %}</td>
+          <td>{% if p2.stock_count > 0 %}<span class="stock-pill stock-in">In Stock ({{ p2.stock_count }})</span>{% else %}<span class="stock-pill stock-out">Out of Stock</span>{% endif %}</td>
+        </tr>
+        <tr>
+          <td><strong>RAM Options</strong></td>
+          <td>{% for r in p1.get_ram_list %}{{ r.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td>{% for r in p2.get_ram_list %}{{ r.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+        </tr>
+        <tr>
+          <td><strong>Storage Options</strong></td>
+          <td>{% for s in p1.get_storage_list %}{{ s.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td>{% for s in p2.get_storage_list %}{{ s.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+        </tr>
+        <tr>
+          <td><strong>Specifications</strong></td>
+          <td>{{ p1.specs }}</td>
+          <td>{{ p2.specs }}</td>
+        </tr>
+        <tr>
+          <td><strong>Action</strong></td>
+          <td><a href="{% url 'product_detail' p1.id %}" class="btn btn-primary" style="padding:9px 20px;">Customize {{ p1.name }}</a></td>
+          <td><a href="{% url 'product_detail' p2.id %}" class="btn btn-primary" style="padding:9px 20px;">Customize {{ p2.name }}</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

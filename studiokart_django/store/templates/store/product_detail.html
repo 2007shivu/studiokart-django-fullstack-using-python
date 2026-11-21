@@ -1,0 +1,619 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Customize {{ product.name }} — StudioKart{% endblock %}
+
+{% block extra_css %}
+<style>
+  .studio-layout {
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 50px;
+    align-items: start;
+    margin-top: 20px;
+  }
+  @media (max-width: 920px) {
+    .studio-layout { grid-template-columns: 1fr; }
+  }
+  .sticky-stage {
+    position: sticky;
+    top: 86px;
+  }
+  .stage-card {
+    background: var(--surface);
+    border-radius: 32px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.4s ease;
+    transform-style: preserve-3d;
+  }
+  .zoom-viewport {
+    width: 100%;
+    height: 400px;
+    border-radius: 22px;
+    overflow: hidden;
+    position: relative;
+    background: #fff;
+    cursor: zoom-in;
+    transform-style: preserve-3d;
+  }
+  .zoom-viewport img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.22s ease-out;
+    transform-origin: center center;
+  }
+  .mode-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    justify-content: center;
+  }
+  .mode-btn {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .mode-btn.active {
+    background: #1d1d1f;
+    color: #fff;
+    border-color: #1d1d1f;
+  }
+  .thumb-strip {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    justify-content: center;
+  }
+  .thumb-item {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .thumb-item.active {
+    border-color: var(--accent);
+    transform: scale(1.06);
+  }
+  .thumb-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .live-finish-badge {
+    position: absolute;
+    top: 38px;
+    left: 38px;
+    z-index: 10;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(12px);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  }
+  .finish-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+  .engraving-preview-pill {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(29, 29, 31, 0.86);
+    backdrop-filter: blur(10px);
+    color: #f5f5f7;
+    padding: 7px 18px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    display: none;
+    white-space: nowrap;
+  }
+  .step-block {
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+  .step-title {
+    font-size: 1.12rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .step-title span {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .emi-note {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .spec-table {
+    margin-top: 48px;
+    background: var(--surface);
+    border-radius: 26px;
+    padding: 28px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container"
+         id="studio-root"
+         data-product-name="{{ product.name }}"
+         data-base-price="{{ product.price|floatformat:0 }}"
+         data-mrp="{{ product.effective_mrp|floatformat:0 }}"
+         data-init-color="{{ colors.0.name }}"
+         data-init-hex="{{ colors.0.hex }}"
+         data-init-storage="{{ storages.0.label }}"
+         data-init-storage-extra="{{ storages.0.extra|floatformat:0 }}"
+         data-init-ram="{{ rams.0.label }}"
+         data-init-ram-extra="{{ rams.0.extra|floatformat:0 }}">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <a href="{% url 'brand_page' product.brand %}"
+       data-no-transition
+       id="back-btn"
+       style="text-decoration:none; color:#0071e3; font-weight:600;">← Back to {{ product.brand }}</a>
+    <div style="display:flex; gap:12px;">
+      <a href="{% url 'compare' %}?p1={{ product.id }}" class="btn btn-secondary" style="padding:8px 16px; font-size:0.84rem;">Compare Products</a>
+      <a href="{% url 'toggle_wishlist' product.id %}" class="btn btn-secondary" style="padding:8px 16px; font-size:0.84rem;">
+        {% if in_wishlist %}♥ Saved{% else %}♡ Save for Later{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <div class="studio-layout">
+    <!-- Left Sticky Stage: Hover Zoom Gallery & 3D Rotating Preview -->
+    <div class="sticky-stage">
+      <div class="stage-card" id="preview-stage">
+        <div class="live-finish-badge">
+          <span class="finish-dot" id="live-dot"></span>
+          <span id="live-color-label">{{ colors.0.name }}</span>
+        </div>
+
+        <div class="zoom-viewport" id="zoom-box">
+          <img src="{{ gallery.0 }}" alt="{{ product.name }}" id="main-stage-img" />
+          <div class="engraving-preview-pill" id="engraving-preview"></div>
+        </div>
+
+        <!-- Mode Switcher: Hover Zoom Gallery & 3D Rotating Preview -->
+        <div class="mode-bar">
+          <button type="button" class="mode-btn active" data-stage-mode="photo">Hover Zoom Gallery</button>
+          <button type="button" class="mode-btn" data-stage-mode="3d">3D Rotating Preview</button>
+        </div>
+
+        <!-- Multiple Product Images Thumbnail Strip -->
+        <div class="thumb-strip" id="thumb-strip">
+          {% for img_url in gallery %}
+            <div class="thumb-item {% if forloop.first %}active{% endif %}" data-img-src="{{ img_url }}">
+              <img src="{{ img_url }}" alt="Angle {{ forloop.counter }}" />
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Apple-Style Customizer -->
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="card-tag" style="margin:0;">{{ product.brand }} • {{ product.category }}</span>
+        <span style="font-size:0.84rem; font-weight:700; color:#f59e0b;">★ {{ product.average_rating }} ({{ reviews|length }} reviews)</span>
+      </div>
+
+      <h1 style="font-size:2.35rem; letter-spacing:-0.03em; margin:8px 0 10px;">Buy {{ product.name }}</h1>
+
+      <!-- Price, MRP & Discount -->
+      <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:1.85rem; font-weight:700;" id="live-price">₹{{ product.price|floatformat:0|intcomma }}</div>
+        {% if product.discount_percent > 0 %}
+          <div style="font-size:1.05rem; color:#6e6e73; text-decoration:line-through;" id="live-mrp">₹{{ product.effective_mrp|floatformat:0|intcomma }}</div>
+          <span class="discount-badge">Save {{ product.discount_percent }}%</span>
+        {% endif %}
+      </div>
+      <div class="emi-note" id="live-emi">Or ₹0/mo. with No-Cost EMI</div>
+
+      <!-- Flipkart-Style Bank Card Offers & Monthly EMI Plans -->
+      <div style="background:var(--surface); border-radius:18px; padding:14px 18px; margin-top:14px; font-size:0.86rem;">
+        <div style="font-weight:700; margin-bottom:8px; color:#1d1d1f;">Available Card Offers &amp; EMI</div>
+        <div style="display:flex; flex-direction:column; gap:6px; color:#1d1d1f;">
+          <div>🏷️ <strong>Bank Offer:</strong> 10% Instant Discount on HDFC Bank Credit/Debit Cards (up to ₹5,000)</div>
+          <div>🏷️ <strong>Bank Offer:</strong> Flat ₹4,000 Instant Discount on ICICI Bank Credit Cards</div>
+          <div>🏷️ <strong>Bank Offer:</strong> 5% Unlimited Cashback on Flipkart Axis Bank Card</div>
+          <div>💳 <strong>Monthly EMI:</strong> No-Cost EMI available for 3 &amp; 6 months (<span id="emi-6m-preview" style="font-weight:700; color:#0071e3;">₹0/mo</span>) • Standard EMI up to 24 months</div>
+        </div>
+      </div>
+
+      <!-- Stock Availability Indicator -->
+      <div style="margin-top:12px;">
+        {% if product.stock_count > 0 %}
+          <span class="stock-pill stock-in">● In Stock ({{ product.stock_count }} units ready for dispatch)</span>
+        {% else %}
+          <span class="stock-pill stock-out">● Out of Stock</span>
+        {% endif %}
+      </div>
+
+      <p style="color:#6e6e73; font-size:0.98rem; line-height:1.55; margin-top:14px;">{{ product.description }}</p>
+
+      <form method="POST" action="{% url 'configure_product' product.id %}" id="customizer-form">
+        {% csrf_token %}
+        <input type="hidden" name="selected_color" id="input-color" value="{{ colors.0.name }}" />
+        <input type="hidden" name="selected_ram" id="input-ram" value="{{ rams.0.label }}" />
+        <input type="hidden" name="selected_storage" id="input-storage" value="{{ storages.0.label }}" />
+        <input type="hidden" name="action_type" id="input-action-type" value="cart" />
+
+        <div class="step-block">
+          <div class="step-title">Finish. <span>Available colors.</span></div>
+          <div style="font-size:0.9rem; font-weight:600; margin-top:8px;" id="step-color-name">Color — {{ colors.0.name }}</div>
+          <div class="swatch-row">
+            {% for c in colors %}
+              <button type="button"
+                class="swatch-btn {% if forloop.first %}active{% endif %}"
+                data-color-name="{{ c.name }}"
+                data-color-hex="{{ c.hex }}"
+                title="{{ c.name }}">
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-title">Memory (RAM). <span>Choose multitasking power.</span></div>
+          <div class="storage-grid">
+            {% for r in rams %}
+              <div class="storage-option ram-option {% if forloop.first %}active{% endif %}"
+                   data-ram-label="{{ r.label }}"
+                   data-ram-extra="{{ r.extra|floatformat:0 }}">
+                <div style="font-weight:700; font-size:0.96rem;">{{ r.label }}</div>
+                <div style="font-size:0.82rem; color:#6e6e73; margin-top:4px;">
+                  {% if r.extra == 0 %}Included{% else %}+ ₹{{ r.extra|floatformat:0|intcomma }}{% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-title">Storage. <span>How much space do you need?</span></div>
+          <div class="storage-grid">
+            {% for s in storages %}
+              <div class="storage-option storage-tier {% if forloop.first %}active{% endif %}"
+                   data-storage-label="{{ s.label }}"
+                   data-storage-extra="{{ s.extra|floatformat:0 }}">
+                <div style="font-weight:700; font-size:0.96rem;">{{ s.label }}</div>
+                <div style="font-size:0.82rem; color:#6e6e73; margin-top:4px;">
+                  {% if s.extra == 0 %}Included{% else %}+ ₹{{ s.extra|floatformat:0|intcomma }}{% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if product.allow_engraving %}
+        <div class="step-block">
+          <div class="step-title">Personalize it. <span>Add free engraving.</span></div>
+          <p style="font-size:0.86rem; color:#6e6e73; margin:4px 0 10px;">Engrave your name, initials, or a lucky number on the back — free.</p>
+          <div class="form-group" style="margin-bottom:0;">
+            <input type="text" name="engraving_text" id="engraving-input" maxlength="28"
+                   placeholder="Type your custom message (optional)" />
+          </div>
+        </div>
+        {% endif %}
+
+        <div style="background:var(--surface); padding:22px; border-radius:22px; margin-top:24px;">
+          <div style="font-size:0.85rem; color:#6e6e73;">Your Custom Configuration</div>
+          <div style="font-weight:700; font-size:1.02rem; margin:4px 0 14px;" id="summary-config">
+            {{ product.name }} • {{ colors.0.name }} • {{ rams.0.label }} • {{ storages.0.label }}
+          </div>
+          {% if product.stock_count > 0 %}
+            <div style="display:flex; gap:14px; flex-wrap:wrap;">
+              <button type="submit" data-action="cart" class="btn btn-secondary action-submit-btn" style="flex:1; background:#ffffff;">Add to Cart</button>
+              <button type="submit" data-action="order_now" class="btn btn-primary action-submit-btn" style="flex:1;">Buy Now</button>
+            </div>
+          {% else %}
+            <button type="button" class="btn btn-secondary" disabled style="width:100%; opacity:0.6;">Currently Out of Stock</button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Technical Specifications Section -->
+  <div class="spec-table">
+    <h2 style="font-size:1.65rem; letter-spacing:-0.02em; margin-bottom:14px;">Technical Specifications</h2>
+    <table>
+      <tbody>
+        <tr><th style="width:24%;">Model</th><td>{{ product.name }}</td></tr>
+        <tr><th>Brand &amp; Category</th><td>{{ product.brand }} • {{ product.category }}</td></tr>
+        <tr><th>Hardware &amp; Display</th><td>{{ product.specs }}</td></tr>
+        <tr><th>Available Finishes</th><td>{% for c in colors %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+        <tr><th>Memory &amp; Storage Options</th><td>{% for r in rams %}{{ r.label }}{% if not forloop.last %}, {% endif %}{% endfor %} / {% for s in storages %}{{ s.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Customer Reviews Section -->
+  <div class="spec-table" style="margin-top:32px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:1.65rem; letter-spacing:-0.02em;">Customer Reviews</h2>
+        <p style="color:#6e6e73; font-size:0.94rem;">Average Rating: <strong>{{ product.average_rating }} / 5.0 ★</strong></p>
+      </div>
+    </div>
+
+    {% if user.is_authenticated %}
+      <form method="POST" action="{% url 'add_review' product.id %}" style="background:#fff; padding:20px; border-radius:18px; margin-bottom:24px;">
+        {% csrf_token %}
+        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:end;">
+          <div class="form-group" style="width:160px; margin-bottom:0;">
+            <label>Rating</label>
+            <select name="rating">
+              <option value="5">5 ★ — Excellent</option>
+              <option value="4">4 ★ — Great</option>
+              <option value="3">3 ★ — Good</option>
+              <option value="2">2 ★ — Fair</option>
+              <option value="1">1 ★ — Poor</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1; min-width:220px; margin-bottom:0;">
+            <label>Your Review</label>
+            <input type="text" name="comment" placeholder="Share your experience with {{ product.name }}..." required />
+          </div>
+          <button type="submit" class="btn btn-primary">Post Review</button>
+        </div>
+      </form>
+    {% endif %}
+
+    {% for rev in reviews %}
+      <div style="background:#fff; padding:16px 20px; border-radius:16px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <strong>{{ rev.user.first_name|default:rev.user.username }}</strong>
+          <span style="color:#f59e0b; font-weight:700;">{{ rev.rating }} ★</span>
+        </div>
+        <p style="color:#1d1d1f; font-size:0.94rem;">{{ rev.comment }}</p>
+        <div style="font-size:0.78rem; color:#6e6e73; margin-top:6px;">{{ rev.created_at|date:"d M Y" }}</div>
+      </div>
+    {% empty %}
+      <p style="color:#6e6e73;">No reviews yet. Be the first to review!</p>
+    {% endfor %}
+  </div>
+
+  <!-- Similar Products Section -->
+  {% if similar_products %}
+  <div style="margin-top:54px;">
+    <div class="section-header">
+      <div>
+        <h2>Similar Products You May Like</h2>
+        <p>Compare or customize related flagship devices.</p>
+      </div>
+      <a href="{% url 'compare' %}?p1={{ product.id }}" class="btn btn-secondary">Compare Side by Side →</a>
+    </div>
+    <div class="grid-3">
+      {% for sp in similar_products %}
+        <a href="{% url 'product_detail' sp.id %}" class="card-3d">
+          <div class="card-3d-img-wrap">
+            <img src="{{ sp.image_url }}" alt="{{ sp.name }}" />
+          </div>
+          <div class="card-tag">{{ sp.brand }} • {{ sp.category }}</div>
+          <div class="card-title">{{ sp.name }}</div>
+          <div class="card-desc">{{ sp.description }}</div>
+          <div class="card-footer">
+            <span class="price">₹{{ sp.price|floatformat:0|intcomma }}</span>
+            <span class="btn btn-primary" style="padding:8px 18px; font-size:0.84rem;">View</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const root = document.getElementById("studio-root");
+    const productName = root.dataset.productName;
+    const basePrice = Number(root.dataset.basePrice) || 0;
+    const baseMrp = Number(root.dataset.mrp) || basePrice;
+    let currentColor = root.dataset.initColor;
+    let currentStorage = root.dataset.initStorage;
+    let currentStorageExtra = Number(root.dataset.initStorageExtra) || 0;
+    let currentRam = root.dataset.initRam;
+    let currentRamExtra = Number(root.dataset.initRamExtra) || 0;
+
+    document.getElementById("live-dot").style.backgroundColor = root.dataset.initHex;
+
+    // Safe Back Button handler
+    const backBtn = document.getElementById("back-btn");
+    if (backBtn) {
+      backBtn.addEventListener("click", (e) => {
+        if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) {
+          e.preventDefault();
+          history.back();
+        }
+      });
+    }
+
+    function refreshStudioUI() {
+      const extraTotal = currentStorageExtra + currentRamExtra;
+      const total = basePrice + extraTotal;
+      const mrpTotal = baseMrp + extraTotal;
+      const emi = Math.round(total / 24);
+
+      document.getElementById("live-price").textContent = "₹" + total.toLocaleString("en-IN");
+      const mrpEl = document.getElementById("live-mrp");
+      if (mrpEl) mrpEl.textContent = "₹" + mrpTotal.toLocaleString("en-IN");
+      const emi6 = Math.round(total / 6);
+      document.getElementById("live-emi").textContent = "Or ₹" + emi6.toLocaleString("en-IN") + "/mo. with 6-Month No-Cost EMI";
+      const emi6Badge = document.getElementById("emi-6m-preview");
+      if (emi6Badge) emi6Badge.textContent = "₹" + emi6.toLocaleString("en-IN") + "/mo";
+      document.getElementById("summary-config").textContent =
+        productName + " • " + currentColor + " • " + currentRam + " • " + currentStorage;
+    }
+
+    const thumbs = Array.from(document.querySelectorAll(".thumb-item"));
+    const mainImg = document.getElementById("main-stage-img");
+    const zoomBox = document.getElementById("zoom-box");
+    const modeButtons = document.querySelectorAll(".mode-btn");
+    let currentMode = "photo";
+    let spinTimer = null;
+
+    function activateStageMode(mode) {
+      currentMode = mode;
+
+      modeButtons.forEach((b) => {
+        b.classList.toggle("active", b.dataset.stageMode === mode);
+      });
+
+      if (spinTimer) {
+        clearInterval(spinTimer);
+        spinTimer = null;
+      }
+      zoomBox.classList.remove("spin-3d-active");
+      mainImg.style.transform = "scale(1)";
+
+      if (mode === "3d") {
+        zoomBox.classList.add("spin-3d-active");
+        let angle = 0;
+        spinTimer = setInterval(() => {
+          angle = (angle + 4) % 360;
+          const rotY = Math.sin((angle * Math.PI) / 180) * 26;
+          const rotX = Math.cos((angle * Math.PI) / 180) * 8;
+          mainImg.style.transform = `perspective(900px) rotateY(${rotY.toFixed(1)}deg) rotateX(${rotX.toFixed(1)}deg) scale(1.06)`;
+          if (thumbs.length > 1) {
+            const idx = Math.floor((angle / 360) * thumbs.length);
+            mainImg.src = thumbs[idx].dataset.imgSrc;
+            thumbs.forEach((t, i) => t.classList.toggle("active", i === idx));
+          }
+        }, 60);
+      }
+    }
+
+    modeButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activateStageMode(btn.dataset.stageMode);
+      });
+    });
+
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener("click", () => {
+        activateStageMode("photo");
+        mainImg.src = thumb.dataset.imgSrc;
+        thumbs.forEach((t) => t.classList.remove("active"));
+        thumb.classList.add("active");
+      });
+    });
+
+    // Hover Zoom
+    zoomBox.addEventListener("mousemove", (e) => {
+      if (currentMode !== "photo") return;
+      const rect = zoomBox.getBoundingClientRect();
+      const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+      const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+      mainImg.style.transformOrigin = `${xPct}% ${yPct}%`;
+      mainImg.style.transform = "scale(1.85)";
+    });
+    zoomBox.addEventListener("mouseleave", () => {
+      if (currentMode !== "photo") return;
+      mainImg.style.transformOrigin = "center center";
+      mainImg.style.transform = "scale(1)";
+    });
+
+    // Color Swatch Selection
+    document.querySelectorAll(".swatch-btn").forEach((btn) => {
+      const hex = btn.dataset.colorHex;
+      const name = btn.dataset.colorName;
+      btn.style.backgroundColor = hex;
+
+      btn.addEventListener("click", () => {
+        currentColor = name;
+        document.getElementById("input-color").value = name;
+        document.getElementById("live-color-label").textContent = name;
+        document.getElementById("step-color-name").textContent = "Color — " + name;
+        document.getElementById("live-dot").style.backgroundColor = hex;
+        document.getElementById("preview-stage").style.boxShadow = "0 28px 60px " + hex + "44";
+
+        document.querySelectorAll(".swatch-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        refreshStudioUI();
+      });
+    });
+
+    // RAM Selection
+    document.querySelectorAll(".ram-option").forEach((el) => {
+      el.addEventListener("click", () => {
+        currentRam = el.dataset.ramLabel;
+        currentRamExtra = Number(el.dataset.ramExtra) || 0;
+        document.getElementById("input-ram").value = currentRam;
+
+        document.querySelectorAll(".ram-option").forEach((o) => o.classList.remove("active"));
+        el.classList.add("active");
+        refreshStudioUI();
+      });
+    });
+
+    // Storage Selection
+    document.querySelectorAll(".storage-tier").forEach((el) => {
+      el.addEventListener("click", () => {
+        currentStorage = el.dataset.storageLabel;
+        currentStorageExtra = Number(el.dataset.storageExtra) || 0;
+        document.getElementById("input-storage").value = currentStorage;
+
+        document.querySelectorAll(".storage-tier").forEach((o) => o.classList.remove("active"));
+        el.classList.add("active");
+        refreshStudioUI();
+      });
+    });
+
+    // Free Engraving Live Preview
+    const engravingInput = document.getElementById("engraving-input");
+    if (engravingInput) {
+      engravingInput.addEventListener("input", () => {
+        const badge = document.getElementById("engraving-preview");
+        const clean = engravingInput.value.trim();
+        if (clean.length > 0) {
+          badge.style.display = "block";
+          badge.textContent = "✦ " + clean + " ✦";
+        } else {
+          badge.style.display = "none";
+        }
+      });
+    }
+
+    // Add to Cart vs Buy Now
+    document.querySelectorAll(".action-submit-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.getElementById("input-action-type").value = btn.dataset.action;
+      });
+    });
+
+    refreshStudioUI();
+  });
+</script>
+{% endblock %}

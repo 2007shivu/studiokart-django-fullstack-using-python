@@ -1,0 +1,44 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Saved Items — StudioKart{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="section-header">
+    <div>
+      <div class="card-tag">Apple Store Bag &amp; Saved</div>
+      <h2>Your Saved Devices</h2>
+      <p>Keep track of your favourite configurations before ordering.</p>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="grid-3">
+      {% for w in items %}
+        <div class="card-3d">
+          <div class="card-3d-img-wrap">
+            <img src="{{ w.product.image_url }}" alt="{{ w.product.name }}" />
+          </div>
+          <div class="card-tag">{{ w.product.brand }} • {{ w.product.category }}</div>
+          <div class="card-title">{{ w.product.name }}</div>
+          <div class="card-desc">{{ w.product.description }}</div>
+          <div class="card-footer" style="gap:10px;">
+            <span class="price">₹{{ w.product.price|floatformat:0|intcomma }}</span>
+            <div style="display:flex; gap:8px;">
+              <a href="{% url 'toggle_wishlist' w.product.id %}" class="btn btn-danger" style="padding:8px 14px; font-size:0.82rem;">Remove</a>
+              <a href="{% url 'product_detail' w.product.id %}" class="btn btn-primary" style="padding:8px 16px; font-size:0.82rem;">Customize</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="table-box" style="text-align:center; padding:60px 20px;">
+      <h3>No saved items yet.</h3>
+      <p style="color:#6e6e73; margin:8px 0 22px;">Click "Save for Later" on any product page to bookmark it here.</p>
+      <a href="{% url 'index' %}" class="btn btn-primary">Explore Store</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

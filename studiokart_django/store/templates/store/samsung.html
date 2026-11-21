@@ -1,0 +1,31 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Samsung Flagship Store — StudioKart{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom: 24px;">
+  <div class="hero-eyebrow">Samsung Galaxy Ecosystem</div>
+  <h1>Galaxy AI is here.</h1>
+  <p>Select any of the 3 signature Samsung flagship devices below to inspect full specs, add to cart, or order now.</p>
+</section>
+
+<section class="container" style="padding-top: 10px;">
+  <div class="grid-3">
+    {% for p in products %}
+      <a href="{% url 'product_detail' p.id %}" class="card-3d">
+        <div class="card-3d-img-wrap">
+          <img src="{{ p.image_url }}" alt="{{ p.name }}" />
+        </div>
+        <div class="card-tag">{{ p.category }}</div>
+        <div class="card-title">{{ p.name }}</div>
+        <div class="card-desc">{{ p.description }}</div>
+        <div class="card-footer">
+          <span class="price">₹{{ p.price|floatformat:0|intcomma }}</span>
+          <span class="btn btn-primary" style="padding:9px 20px; font-size:0.86rem;">Open Product →</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

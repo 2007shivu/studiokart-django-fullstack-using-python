@@ -1,0 +1,54 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}StudioKart — Minimalist 3D Store{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'store/css/style.css' %}" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <a href="{% url 'index' %}" class="logo"><span></span> StudioKart</a>
+
+    <form action="{% url 'index' %}" method="GET" class="search-pill">
+      <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search Z Fold 6, iPhone..." />
+    </form>
+
+    <div class="nav-links">
+      <a href="{% url 'index' %}">Store</a>
+      <a href="{% url 'compare' %}">Compare</a>
+      <a href="{% url 'wishlist' %}">Saved <span class="badge">{{ wishlist_count }}</span></a>
+      <a href="{% url 'cart' %}">Cart <span class="badge">{{ cart_count }}</span></a>
+      <a href="{% url 'orders' %}">Orders</a>
+      {% if user.is_authenticated and user.is_staff %}
+        <a href="{% url 'admin_panel' %}" style="color:#0071e3; font-weight:600;">Admin</a>
+      {% endif %}
+      {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}">Logout ({{ user.first_name|default:user.username }})</a>
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  {% if messages %}
+    <div class="flash-stack">
+      {% for message in messages %}
+        <div class="flash-pill">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    StudioKart © 2026 — Apple-Inspired Configure-to-Order Storefront built with Python &amp; Django.
+  </footer>
+
+  <script src="{% static 'store/js/app.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,184 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}Admin Dashboard — StudioKart{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-grid {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 30px;
+    align-items: start;
+    margin-bottom: 50px;
+  }
+  @media (max-width: 960px) {
+    .admin-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="section-header">
+    <div>
+      <div class="card-tag">Django Store Administration</div>
+      <h2>Manage Products, Gallery, Stock &amp; Users</h2>
+      <p>Configure gallery images, discounts, stock counts, RAM/storage options, and users.</p>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    <div class="auth-card" style="max-width:100%; padding:28px;">
+      <h3 style="margin-bottom:16px;">{% if edit_product %}Update Product{% else %}Add New Product{% endif %}</h3>
+      <form method="POST">
+        {% csrf_token %}
+        {% if edit_product %}
+          <input type="hidden" name="prod_id" value="{{ edit_product.id }}" />
+        {% endif %}
+        <div class="form-group">
+          <label>Brand</label>
+          <select name="brand" required>
+            <option value="Samsung" {% if edit_product.brand == 'Samsung' %}selected{% endif %}>Samsung</option>
+            <option value="Apple" {% if edit_product.brand == 'Apple' %}selected{% endif %}>Apple</option>
+            <option value="Sony" {% if edit_product.brand == 'Sony' %}selected{% endif %}>Sony</option>
+            <option value="Other" {% if edit_product.brand == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" name="name" value="{{ edit_product.name|default:'' }}" placeholder="e.g. Samsung Galaxy Watch Ultra" required />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label>Sale Price (₹)</label>
+            <input type="number" name="price" value="{{ edit_product.price|floatformat:0|default:'' }}" placeholder="59999" required />
+          </div>
+          <div class="form-group">
+            <label>Original MRP (₹)</label>
+            <input type="number" name="mrp" value="{{ edit_product.mrp|floatformat:0|default:'' }}" placeholder="69999" />
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label>Stock Count</label>
+            <input type="number" name="stock_count" value="{{ edit_product.stock_count|default:15 }}" required />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" name="category" value="{{ edit_product.category|default:'' }}" placeholder="Foldable / Laptop" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Primary Image URL</label>
+          <input type="url" name="image_url" value="{{ edit_product.image_url|default:'' }}" placeholder="https://images.unsplash.com/..." required />
+        </div>
+        <div class="form-group">
+          <label>Extra Gallery Image URLs (comma-separated)</label>
+          <textarea name="gallery_urls" rows="2" placeholder="https://..., https://...">{{ edit_product.gallery_urls|default:'' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Color Finishes (Name:#Hex, ...)</label>
+          <input type="text" name="colors_config" value="{{ edit_product.colors_config|default:'Natural Titanium:#8e8d8a,Black Titanium:#2c2c2e' }}" required />
+        </div>
+        <div class="form-group">
+          <label>RAM Options (Label:ExtraPrice, ...)</label>
+          <input type="text" name="ram_config" value="{{ edit_product.ram_config|default:'12GB RAM:0,16GB RAM:10000' }}" required />
+        </div>
+        <div class="form-group">
+          <label>Storage Options (Label:ExtraPrice, ...)</label>
+          <input type="text" name="storage_config" value="{{ edit_product.storage_config|default:'256GB:0,512GB:15000,1TB:35000' }}" required />
+        </div>
+        <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" name="allow_engraving" id="chk-eng" style="width:auto;" {% if not edit_product or edit_product.allow_engraving %}checked{% endif %} />
+          <label for="chk-eng" style="margin:0;">Allow Free Personal Engraving</label>
+        </div>
+        <div class="form-group">
+          <label>Short Description</label>
+          <input type="text" name="description" value="{{ edit_product.description|default:'' }}" placeholder="Flagship description" required />
+        </div>
+        <div class="form-group">
+          <label>Technical Specifications</label>
+          <textarea name="specs" rows="2" placeholder="Display | Processor | Camera | Battery" required>{{ edit_product.specs|default:'' }}</textarea>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">
+            {% if edit_product %}Update Product{% else %}Save Product{% endif %}
+          </button>
+          {% if edit_product %}
+            <a href="{% url 'admin_panel' %}" class="btn btn-secondary">Cancel</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    <div class="table-box">
+      <h3 style="margin-bottom:16px;">Product Inventory</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Stock</th>
+            <th>Price / MRP</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+            <tr>
+              <td style="display:flex; align-items:center; gap:10px;">
+                <img src="{{ p.image_url }}" style="width:46px; height:46px; border-radius:10px; object-fit:cover;" />
+                <div>
+                  <strong>{{ p.name }}</strong><br>
+                  <span style="font-size:0.8rem; color:#6e6e73;">{{ p.brand }}</span>
+                </div>
+              </td>
+              <td>{{ p.stock_count }} units</td>
+              <td>
+                <strong>₹{{ p.price|floatformat:0|intcomma }}</strong>
+                {% if p.discount_percent > 0 %}
+                  <div style="font-size:0.78rem; color:#007a3d;">{{ p.discount_percent }}% OFF</div>
+                {% endif %}
+              </td>
+              <td style="white-space:nowrap;">
+                <a href="{% url 'admin_panel' %}?edit={{ p.id }}" class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;">Edit</a>
+                <a href="{% url 'delete_product' p.id %}" class="btn btn-danger" style="padding:6px 12px; font-size:0.8rem;">Delete</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="table-box">
+    <h3 style="margin-bottom:16px;">Registered Users</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Full Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ u.id }}</td>
+            <td><strong>{{ u.first_name|default:u.username }}</strong></td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.email }}</td>
+            <td>
+              <span class="badge" style="background:{% if u.is_staff %}#1d1d1f{% else %}#0071e3{% endif %};">
+                {% if u.is_staff %}ADMIN{% else %}USER{% endif %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

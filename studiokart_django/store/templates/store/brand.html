@@ -1,0 +1,51 @@
+{% extends 'store/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ brand_name }} Store — StudioKart{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom: 24px;">
+  <div style="margin-bottom: 14px;">
+    <a href="{% url 'index' %}" style="text-decoration:none; color:#0071e3; font-weight:600; font-size:0.95rem;">← Back to Store</a>
+  </div>
+  <div class="hero-eyebrow">{{ meta.eyebrow }}</div>
+  <h1>{{ meta.headline }}</h1>
+  <p>{{ meta.sub }}</p>
+</section>
+
+<section class="container" style="padding-top: 10px;">
+  {% if products %}
+    <div class="grid-3">
+      {% for p in products %}
+        <a href="{% url 'product_detail' p.id %}" class="card-3d">
+          <div class="card-3d-img-wrap">
+            <img src="{{ p.image_url }}" alt="{{ p.name }}" />
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span class="card-tag" style="margin:0;">{{ p.category }}</span>
+            {% if p.discount_percent > 0 %}
+              <span class="discount-badge">{{ p.discount_percent }}% OFF</span>
+            {% endif %}
+          </div>
+          <div class="card-title">{{ p.name }}</div>
+          <div class="card-desc">{{ p.description }}</div>
+          <div class="card-footer">
+            <div>
+              <span class="price">₹{{ p.price|floatformat:0|intcomma }}</span>
+              {% if p.discount_percent > 0 %}
+                <span style="font-size:0.84rem; color:#6e6e73; text-decoration:line-through; margin-left:6px;">₹{{ p.effective_mrp|floatformat:0|intcomma }}</span>
+              {% endif %}
+            </div>
+            <span class="btn btn-primary" style="padding:9px 20px; font-size:0.86rem;">Customize →</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="table-box" style="text-align:center; padding:50px;">
+      <h3>No products found for {{ brand_name }} yet.</h3>
+      <a href="{% url 'index' %}" class="btn btn-primary" style="margin-top:16px;">Back to Home</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
